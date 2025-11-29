@@ -16,8 +16,13 @@
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
-  <div class="card-header py-3 bg-primary text-white">
+  <div class="card-header py-3 bg-primary text-white d-flex justify-content-between align-items-center">
     <h6 class="mb-0">Filter Slip</h6>
+    <div class="d-flex">
+      <?php $baseQuery = 'user_id=' . urlencode($selectedUserId ?? '') . '&month=' . urlencode((string) ($month ?? date('n'))) . '&year=' . urlencode((string) ($year ?? date('Y'))) . '&date=' . urlencode((string) ($date ?? date('Y-m-d'))); ?>
+      <a id="btnExcel" class="btn btn-light btn-sm mx-1" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=excel&' . $baseQuery) : '#' ?>">Cetak Excel</a>
+      <a id="btnPdf" class="btn btn-outline-light btn-sm mx-1" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=pdf&' . $baseQuery) : '#' ?>">Cetak PDF</a>
+    </div>
   </div>
   <div class="card-body">
     <form class="row g-3" method="get" action="<?= site_url('salaries/slip-report') ?>">
@@ -33,7 +38,7 @@
       <div class="col-md-2">
         <label class="form-label">Bulan</label>
         <select name="month" class="form-select form-control">
-          <?php $months = [1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember']; ?>
+          <?php $months = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember']; ?>
           <?php foreach ($months as $m => $label): ?>
             <option value="<?= $m ?>" <?= ($month ?? date('n')) == $m ? 'selected' : '' ?>><?= $label ?></option>
           <?php endforeach; ?>
@@ -47,11 +52,6 @@
         <label class="form-label">Tanggal Cetak</label>
         <input type="date" name="date" class="form-control" value="<?= esc($date ?? date('Y-m-d')) ?>">
       </div>
-      <div class="col-12 d-flex justify-content-end">
-        <?php $baseQuery = 'user_id=' . urlencode($selectedUserId ?? '') . '&month=' . urlencode((string) ($month ?? date('n'))) . '&year=' . urlencode((string) ($year ?? date('Y'))) . '&date=' . urlencode((string) ($date ?? date('Y-m-d'))); ?>
-        <a id="btnExcel" class="btn btn-success mx-1 <?= ($selectedUserId ?? '') === '' ? 'disabled' : '' ?>" aria-disabled="<?= ($selectedUserId ?? '') === '' ? 'true' : 'false' ?>" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=excel&' . $baseQuery) : '#' ?>"><i class="fas fa-file-excel mr-1"></i> Cetak Excel</a>
-        <a id="btnPdf" class="btn btn-danger mx-1 <?= ($selectedUserId ?? '') === '' ? 'disabled' : '' ?>" aria-disabled="<?= ($selectedUserId ?? '') === '' ? 'true' : 'false' ?>" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=pdf&' . $baseQuery) : '#' ?>"><i class="fas fa-file-pdf mr-1"></i> Cetak PDF</a>
-      </div>
     </form>
   </div>
 </div>
@@ -60,8 +60,9 @@
 
 <?= $this->section('script') ?>
 <script>
-  (function(){
+  (function() {
     var base = '<?= site_url('salaries/slip-export') ?>';
+
     function update() {
       var uid = document.querySelector('[name="user_id"]').value;
       var m = document.querySelector('[name="month"]').value;
@@ -71,25 +72,24 @@
       var pdf = document.getElementById('btnPdf');
       var qs = '?user_id=' + encodeURIComponent(uid) + '&month=' + encodeURIComponent(m) + '&year=' + encodeURIComponent(y) + '&date=' + encodeURIComponent(d);
       if (uid) {
-        excel.classList.remove('disabled');
-        pdf.classList.remove('disabled');
-        excel.setAttribute('aria-disabled','false');
-        pdf.setAttribute('aria-disabled','false');
         excel.href = base + qs + '&format=excel';
         pdf.href = base + qs + '&format=pdf';
+        excel.dataset.disabled = 'false';
+        pdf.dataset.disabled = 'false';
       } else {
-        excel.classList.add('disabled');
-        pdf.classList.add('disabled');
-        excel.setAttribute('aria-disabled','true');
-        pdf.setAttribute('aria-disabled','true');
         excel.href = '#';
         pdf.href = '#';
+        excel.dataset.disabled = 'true';
+        pdf.dataset.disabled = 'true';
       }
     }
     document.querySelector('[name="user_id"]').addEventListener('change', update);
     document.querySelector('[name="month"]').addEventListener('change', update);
     document.querySelector('[name="year"]').addEventListener('input', update);
     document.querySelector('[name="date"]').addEventListener('change', update);
+    document.getElementById('btnExcel').addEventListener('click', function(e){ if (this.getAttribute('href') === '#') { e.preventDefault(); } });
+    document.getElementById('btnPdf').addEventListener('click', function(e){ if (this.getAttribute('href') === '#') { e.preventDefault(); } });
+    update();
   })();
 </script>
 <?= $this->endSection() ?>

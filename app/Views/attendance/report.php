@@ -19,8 +19,8 @@
   <div class="card-header py-3 bg-primary text-white d-flex justify-content-between align-items-center">
     <h6 class="mb-0">Filter Laporan</h6>
     <div class="d-flex">
-      <a class="btn btn-light btn-sm mx-1" href="<?= site_url('attendance/export?format=excel&month=' . ($month ?? date('n')) . '&year=' . ($year ?? date('Y'))) ?>">Cetak Excel</a>
-      <a class="btn btn-outline-light btn-sm mx-1" href="<?= site_url('attendance/export?format=pdf&month=' . ($month ?? date('n')) . '&year=' . ($year ?? date('Y'))) ?>">Cetak PDF</a>
+      <a id="btnAttExcel" class="btn btn-light btn-sm mx-1" href="<?= site_url('attendance/export?format=excel&month=' . ($month ?? date('n')) . '&year=' . ($year ?? date('Y'))) ?>">Cetak Excel</a>
+      <a id="btnAttPdf" class="btn btn-outline-light btn-sm mx-1" href="<?= site_url('attendance/export?format=pdf&month=' . ($month ?? date('n')) . '&year=' . ($year ?? date('Y'))) ?>">Cetak PDF</a>
     </div>
   </div>
   <div class="card-body">
@@ -38,11 +38,27 @@
         <label class="form-label">Tahun</label>
         <input type="number" name="year" class="form-control" value="<?= esc($year ?? date('Y')) ?>" min="2000" max="2100">
       </div>
-      <div class="col-md-4 d-flex align-items-end">
-        <button class="btn btn-primary">Terapkan</button>
-      </div>
+      
     </form>
   </div>
 </div>
 
+<?= $this->endSection() ?>
+
+<?= $this->section('script') ?>
+<script>
+  (function(){
+    var base = '<?= site_url('attendance/export') ?>';
+    function update() {
+      var m = document.querySelector('[name="month"]').value;
+      var y = document.querySelector('[name="year"]').value;
+      var qs = '?month=' + encodeURIComponent(m) + '&year=' + encodeURIComponent(y);
+      document.getElementById('btnAttExcel').href = base + qs + '&format=excel';
+      document.getElementById('btnAttPdf').href = base + qs + '&format=pdf';
+    }
+    document.querySelector('[name="month"]').addEventListener('change', update);
+    document.querySelector('[name="year"]').addEventListener('input', update);
+    update();
+  })();
+</script>
 <?= $this->endSection() ?>
