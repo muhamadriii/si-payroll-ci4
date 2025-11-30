@@ -31,7 +31,6 @@
       <div class="collapse navbar-collapse" id="navbarMain">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item"><a class="nav-link" href="#fitur">Fitur</a></li>
-          <li class="nav-item"><a class="nav-link" href="#demo">Demo</a></li>
           <li class="nav-item"><a class="btn btn-primary ml-lg-3" href="<?= site_url('login') ?>">Masuk</a></li>
         </ul>
       </div>
@@ -118,7 +117,7 @@
 
   <footer class="py-4 bg-white border-top">
     <div class="container text-center text-muted">
-      <small>&copy; <?= date('Y') ?> Web Payroll</small>
+      <small>&copy; <?= date('Y') ?> Kelompok 6</small>
     </div>
   </footer>
 
