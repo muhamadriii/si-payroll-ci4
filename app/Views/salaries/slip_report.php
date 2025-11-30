@@ -20,8 +20,8 @@
     <h6 class="mb-0">Filter Slip</h6>
     <div class="d-flex">
       <?php $baseQuery = 'user_id=' . urlencode($selectedUserId ?? '') . '&month=' . urlencode((string) ($month ?? date('n'))) . '&year=' . urlencode((string) ($year ?? date('Y'))) . '&date=' . urlencode((string) ($date ?? date('Y-m-d'))); ?>
-      <a id="btnExcel" class="btn btn-light btn-sm mx-1" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=excel&' . $baseQuery) : '#' ?>">Cetak Excel</a>
-      <a id="btnPdf" class="btn btn-outline-light btn-sm mx-1" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=pdf&' . $baseQuery) : '#' ?>">Cetak PDF</a>
+      <a id="btnExcel" class="btn btn-light btn-sm mx-1" target="_blank" rel="noopener" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=excel&' . $baseQuery) : '#' ?>">Cetak Excel</a>
+      <a id="btnPdf" class="btn btn-outline-light btn-sm mx-1" target="_blank" rel="noopener" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=pdf&' . $baseQuery) : '#' ?>">Cetak PDF</a>
     </div>
   </div>
   <div class="card-body">
@@ -87,8 +87,8 @@
     document.querySelector('[name="month"]').addEventListener('change', update);
     document.querySelector('[name="year"]').addEventListener('input', update);
     document.querySelector('[name="date"]').addEventListener('change', update);
-    document.getElementById('btnExcel').addEventListener('click', function(e){ if (this.getAttribute('href') === '#') { e.preventDefault(); } });
-    document.getElementById('btnPdf').addEventListener('click', function(e){ if (this.getAttribute('href') === '#') { e.preventDefault(); } });
+    document.getElementById('btnExcel').addEventListener('click', function(e){ var h=this.getAttribute('href'); if (h === '#') { e.preventDefault(); } else { window.open(h, '_blank'); e.preventDefault(); } });
+    document.getElementById('btnPdf').addEventListener('click', function(e){ var h=this.getAttribute('href'); if (h === '#') { e.preventDefault(); } else { window.open(h, '_blank'); e.preventDefault(); } });
     update();
   })();
 </script>
