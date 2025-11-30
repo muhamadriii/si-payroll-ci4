@@ -63,12 +63,39 @@ class Salaries extends Controller
             ->orderBy('name', 'asc')
             ->findAll();
         $selectedUserId = (string) ($this->request->getGet('user_id') ?? '');
+        $row = null; $user = null; $att = null; $deductionDetail = null;
+        if ($selectedUserId !== '') {
+            $row = (new SalaryModel())->where(['user_id' => $selectedUserId, 'month' => $month, 'year' => $year])->first();
+            if ($row) {
+                $user = (new \App\Models\UserModel())->find($row['user_id']);
+                $att = (new \App\Models\AttendanceModel())->where(['user_id' => $row['user_id'], 'month' => (int) $row['month'], 'year' => (int) $row['year']])->first();
+                $dedRows = (new \App\Models\SalaryDeductionModel())->whereIn('name', ['Sakit', 'Izin', 'Alfa'])->findAll();
+                $map = [];
+                foreach ($dedRows as $d) { $map[$d['name']] = (float) $d['amount']; }
+                $sick = (int) ($att['sick_days'] ?? 0);
+                $leave = (int) ($att['leave_days'] ?? 0);
+                $absent = (int) ($att['absent_days'] ?? 0);
+                $nomSakit = (float) ($map['Sakit'] ?? 0);
+                $nomIzin = (float) ($map['Izin'] ?? 0);
+                $nomAlfa = (float) ($map['Alfa'] ?? 0);
+                $deductionDetail = [
+                    'sakit' => ['days' => $sick, 'nominal' => $nomSakit, 'amount' => $sick * $nomSakit],
+                    'izin' => ['days' => $leave, 'nominal' => $nomIzin, 'amount' => $leave * $nomIzin],
+                    'alfa' => ['days' => $absent, 'nominal' => $nomAlfa, 'amount' => $absent * $nomAlfa],
+                ];
+                $deductionDetail['total'] = ($deductionDetail['sakit']['amount'] + $deductionDetail['izin']['amount'] + $deductionDetail['alfa']['amount']);
+            }
+        }
         return view('salaries/slip_report', $this->shared + [
             'users' => $users,
             'month' => $month,
             'year' => $year,
             'date' => $date,
             'selectedUserId' => $selectedUserId,
+            'row' => $row,
+            'user' => $user,
+            'att' => $att,
+            'deductionDetail' => $deductionDetail,
         ]);
     }
 
@@ -127,14 +154,48 @@ class Salaries extends Controller
             $dompdf->render();
             $pdf = $dompdf->output();
             $filename = sprintf('slip_%s_%04d_%02d.pdf', (string) ($user['nin'] ?? 'pegawai'), $year, $month);
+            $inline = (bool) ($this->request->getGet('preview') ?? false) || strtolower((string) ($this->request->getGet('disposition') ?? '')) === 'inline';
+            $disposition = ($inline ? 'inline' : 'attachment') . '; filename="' . $filename . '"';
             return $this->response
                 ->setHeader('Content-Type', 'application/pdf')
-                ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->setHeader('Content-Disposition', $disposition)
                 ->setHeader('Cache-Control', 'no-store, no-cache')
                 ->setBody($pdf);
         }
 
         return redirect()->to('/salaries/slip-report?month=' . $month . '&year=' . $year)->with('error', 'Format tidak dikenal');
+    }
+
+    public function slipPreview()
+    {
+        $userId = (string) ($this->request->getGet('user_id') ?? '');
+        $month = (int) ($this->request->getGet('month') ?? date('n'));
+        $year = (int) ($this->request->getGet('year') ?? date('Y'));
+        if ($userId === '') {
+            return redirect()->back()->with('error', 'Pilih pegawai terlebih dahulu');
+        }
+        $row = (new SalaryModel())->where(['user_id' => $userId, 'month' => $month, 'year' => $year])->first();
+        if (!$row) {
+            return redirect()->to('/salaries/slip-report?month=' . $month . '&year=' . $year)->with('error', 'Data gaji tidak ditemukan untuk pegawai tersebut');
+        }
+        $user = (new \App\Models\UserModel())->find($row['user_id']);
+        $att = (new \App\Models\AttendanceModel())->where(['user_id' => $row['user_id'], 'month' => (int) $row['month'], 'year' => (int) $row['year']])->first();
+        $dedRows = (new \App\Models\SalaryDeductionModel())->whereIn('name', ['Sakit', 'Izin', 'Alfa'])->findAll();
+        $map = [];
+        foreach ($dedRows as $d) { $map[$d['name']] = (float) $d['amount']; }
+        $sick = (int) ($att['sick_days'] ?? 0);
+        $leave = (int) ($att['leave_days'] ?? 0);
+        $absent = (int) ($att['absent_days'] ?? 0);
+        $nomSakit = (float) ($map['Sakit'] ?? 0);
+        $nomIzin = (float) ($map['Izin'] ?? 0);
+        $nomAlfa = (float) ($map['Alfa'] ?? 0);
+        $deductionDetail = [
+            'sakit' => ['days' => $sick, 'nominal' => $nomSakit, 'amount' => $sick * $nomSakit],
+            'izin' => ['days' => $leave, 'nominal' => $nomIzin, 'amount' => $leave * $nomIzin],
+            'alfa' => ['days' => $absent, 'nominal' => $nomAlfa, 'amount' => $absent * $nomAlfa],
+        ];
+        $deductionDetail['total'] = ($deductionDetail['sakit']['amount'] + $deductionDetail['izin']['amount'] + $deductionDetail['alfa']['amount']);
+        return view('salaries/slip', ['row' => $row, 'user' => $user, 'att' => $att, 'deductionDetail' => $deductionDetail]);
     }
 
     public function calculate()

@@ -43,6 +43,7 @@ $routes->group('', ['namespace' => 'App\\Controllers'], function ($routes) {
     $routes->get('salaries/report', 'Salaries::report', ['filter' => 'auth']);
     $routes->get('salaries/slip-report', 'Salaries::slipReport', ['filter' => 'auth']);
     $routes->get('salaries/slip-export', 'Salaries::slipExport', ['filter' => 'auth']);
+    $routes->get('salaries/slip-preview', 'Salaries::slipPreview', ['filter' => 'auth']);
     $routes->get('salaries/slip/(:segment)', 'Salaries::slip/$1', ['filter' => 'auth']);
     $routes->get('salaries/export', 'Salaries::export', ['filter' => 'auth']);
     $routes->get('profile', 'Profile::index', ['filter' => 'auth']);

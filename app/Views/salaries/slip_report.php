@@ -22,6 +22,7 @@
       <?php $baseQuery = 'user_id=' . urlencode($selectedUserId ?? '') . '&month=' . urlencode((string) ($month ?? date('n'))) . '&year=' . urlencode((string) ($year ?? date('Y'))) . '&date=' . urlencode((string) ($date ?? date('Y-m-d'))); ?>
       <a id="btnExcel" class="btn btn-light btn-sm mx-1" target="_blank" rel="noopener" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=excel&' . $baseQuery) : '#' ?>">Cetak Excel</a>
       <a id="btnPdf" class="btn btn-outline-light btn-sm mx-1" target="_blank" rel="noopener" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-export?format=pdf&' . $baseQuery) : '#' ?>">Cetak PDF</a>
+      <a id="btnSlipPreview" class="btn btn-outline-light btn-sm mx-1" href="<?= ($selectedUserId ?? '') !== '' ? site_url('salaries/slip-report?' . $baseQuery) : '#' ?>">Preview Slip</a>
     </div>
   </div>
   <div class="card-body">
@@ -56,13 +57,107 @@
   </div>
 </div>
 
+<div class="card shadow-sm mb-4">
+  <div class="card-header py-3 bg-white">
+    <h6 class="mb-0">Preview Slip</h6>
+  </div>
+  <div class="card-body">
+    <?php if (($selectedUserId ?? '') === '' || !isset($row) || $row === null): ?>
+      <div class="text-muted">Pilih pegawai dan periode untuk melihat preview slip.</div>
+    <?php else: ?>
+      <?php $base = (float) ($row['base_salary'] ?? 0); $trans = (float) ($row['transport_allowance'] ?? 0); $meal = (float) ($row['meal_allowance'] ?? 0); $ded = (float) ($row['deduction_amount'] ?? 0); $subtotal = $base + $trans + $meal - $ded; ?>
+      <div class="card border-0">
+        <div class="card-header d-flex justify-content-between align-items-center bg-light">
+          <div>
+            <div class="h6 mb-0">Slip Gaji</div>
+            <div class="text-muted small">Periode <?= esc($row['month']) ?>/<?= esc($row['year']) ?></div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-8">
+              <div class="text-muted small">Identitas Pegawai</div>
+              <div class="fw-semibold mb-1"><?= esc(($user['name'] ?? '') !== '' ? $user['name'] : ($row['nin'] ?? '')) ?></div>
+              <div class="row g-2">
+                <div class="col-6"><span class="text-muted small">NIK</span><div><?= esc($row['nin']) ?></div></div>
+                <div class="col-6"><span class="text-muted small">Tanggal Masuk</span><div><?= esc($user['hire_date'] ?? '-') ?></div></div>
+              </div>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+              <div class="text-muted small">Ringkasan Absensi</div>
+              <div>Sakit: <?= esc((int) ($att['sick_days'] ?? 0)) ?> | Izin: <?= esc((int) ($att['leave_days'] ?? 0)) ?> | Alfa: <?= esc((int) ($att['absent_days'] ?? 0)) ?></div>
+            </div>
+          </div>
+
+          <table class="table table-sm mb-0">
+            <tbody>
+              <tr>
+                <td>Gaji Pokok</td>
+                <td class="text-end"><?= number_format($base, 2, ',', '.') ?></td>
+              </tr>
+              <tr>
+                <td>Tunjangan Transport</td>
+                <td class="text-end"><?= number_format($trans, 2, ',', '.') ?></td>
+              </tr>
+              <tr>
+                <td>Tunjangan Makan</td>
+                <td class="text-end"><?= number_format($meal, 2, ',', '.') ?></td>
+              </tr>
+              <tr>
+                <td class="text-muted">Potongan</td>
+                <td class="text-end text-danger">-<?= number_format($ded, 2, ',', '.') ?></td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <table class="table table-sm mb-0">
+                        <tbody>
+                          <tr>
+                            <td>Sakit (<?= esc((int) ($att['sick_days'] ?? 0)) ?> × <?= number_format($deductionDetail['sakit']['nominal'] ?? 0, 2, ',', '.') ?>)</td>
+                            <td class="text-end text-danger">-<?= number_format($deductionDetail['sakit']['amount'] ?? 0, 2, ',', '.') ?></td>
+                          </tr>
+                          <tr>
+                            <td>Izin (<?= esc((int) ($att['leave_days'] ?? 0)) ?> × <?= number_format($deductionDetail['izin']['nominal'] ?? 0, 2, ',', '.') ?>)</td>
+                            <td class="text-end text-danger">-<?= number_format($deductionDetail['izin']['amount'] ?? 0, 2, ',', '.') ?></td>
+                          </tr>
+                          <tr>
+                            <td>Alfa (<?= esc((int) ($att['absent_days'] ?? 0)) ?> × <?= number_format($deductionDetail['alfa']['nominal'] ?? 0, 2, ',', '.') ?>)</td>
+                            <td class="text-end text-danger">-<?= number_format($deductionDetail['alfa']['amount'] ?? 0, 2, ',', '.') ?></td>
+                          </tr>
+                          <tr class="table-light">
+                            <td class="fw-semibold">Total Potongan</td>
+                            <td class="text-end fw-semibold text-danger">-<?= number_format($deductionDetail['total'] ?? 0, 2, ',', '.') ?></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="table-light">
+                <td class="fw-semibold">Subtotal</td>
+                <td class="text-end fw-semibold"><?= number_format($subtotal, 2, ',', '.') ?></td>
+              </tr>
+              <tr class="table-primary">
+                <td class="fw-bold">Total Dibayarkan</td>
+                <td class="text-end fw-bold"><?= number_format($row['total_salary'], 2, ',', '.') ?></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <?php endif; ?>
+  </div>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('script') ?>
 <script>
   (function() {
     var base = '<?= site_url('salaries/slip-export') ?>';
-
+    
     function update() {
       var uid = document.querySelector('[name="user_id"]').value;
       var m = document.querySelector('[name="month"]').value;
@@ -70,15 +165,18 @@
       var d = document.querySelector('[name="date"]').value;
       var excel = document.getElementById('btnExcel');
       var pdf = document.getElementById('btnPdf');
+      var prevBtn = document.getElementById('btnSlipPreview');
       var qs = '?user_id=' + encodeURIComponent(uid) + '&month=' + encodeURIComponent(m) + '&year=' + encodeURIComponent(y) + '&date=' + encodeURIComponent(d);
       if (uid) {
         excel.href = base + qs + '&format=excel';
         pdf.href = base + qs + '&format=pdf';
+        prevBtn.href = '<?= site_url('salaries/slip-report') ?>' + qs;
         excel.dataset.disabled = 'false';
         pdf.dataset.disabled = 'false';
       } else {
         excel.href = '#';
         pdf.href = '#';
+        prevBtn.href = '#';
         excel.dataset.disabled = 'true';
         pdf.dataset.disabled = 'true';
       }
@@ -87,8 +185,9 @@
     document.querySelector('[name="month"]').addEventListener('change', update);
     document.querySelector('[name="year"]').addEventListener('input', update);
     document.querySelector('[name="date"]').addEventListener('change', update);
-    document.getElementById('btnExcel').addEventListener('click', function(e){ var h=this.getAttribute('href'); if (h === '#') { e.preventDefault(); } else { window.open(h, '_blank'); e.preventDefault(); } });
-    document.getElementById('btnPdf').addEventListener('click', function(e){ var h=this.getAttribute('href'); if (h === '#') { e.preventDefault(); } else { window.open(h, '_blank'); e.preventDefault(); } });
+    document.getElementById('btnExcel').addEventListener('click', function(e){ var h=this.getAttribute('href'); if (h === '#') { e.preventDefault(); } });
+    document.getElementById('btnPdf').addEventListener('click', function(e){ var h=this.getAttribute('href'); if (h === '#') { e.preventDefault(); } });
+    document.getElementById('btnSlipPreview').addEventListener('click', function(e){ var h=this.getAttribute('href'); if (h === '#') { e.preventDefault(); } });
     update();
   })();
 </script>
