@@ -122,3 +122,8 @@ _modules/*
 
 /results/
 /phpunit*.xml
+
+
+# 
+!public/vendor/
+!public/vendor/*
